@@ -16,8 +16,13 @@ import EditRole from "./components/role/EditRole";
 import AddRole from "./components/role/AddRoles";
 import AddEmployee from "./components/employees/AddEmployee";
 import EditEmployee from "./components/employees/EditEmployee";
+import AddMedication from "./components/medication/AddMedication";
+import EditMedication from "./components/medication/EditMedication";
+import AddChronics from "./components/chronic/AddChronic";
+import EditChronics from "./components/chronic/EditChronic";
+import AddAllergy from "./components/allergies/AddAllergy";
+import EditAllergy from "./components/allergies/EditAllergy";
 
-// ADD THIS
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import EditBed from "./components/ward/EditBed";
@@ -62,9 +67,14 @@ function App() {
           <Route path="role" element={<RoleList />} />
           <Route path="edit-role/:id" element={<EditRole />} />
           <Route path="add-role" element={<AddRole />} />
-          <Route path="employee" element={<EmployeeList />} />
           <Route path="edit-employee/:id" element={<EditEmployee />} />
           <Route path="add-employee" element={<AddEmployee />} />
+          <Route path="edit-medication/:id" element={<EditMedication />} />
+          <Route path="add-medication" element={<AddMedication />} />
+          <Route path="edit-chronic/:id" element={<EditChronics />} />
+          <Route path="add-chronic" element={<AddChronics />} />
+          <Route path="edit-allergy/:id" element={<EditAllergy />} />
+          <Route path="add-allergy" element={<AddAllergy />} />
         </Route>
 
         {/* Employee dashboard */}

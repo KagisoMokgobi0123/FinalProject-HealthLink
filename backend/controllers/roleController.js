@@ -13,7 +13,7 @@ export const getRoles = async (req, res) => {
   }
 };
 
-// ⭐ GET ROLE BY ID
+// GET ROLE BY ID
 export const getRoleById = async (req, res) => {
   try {
     const { id } = req.params;

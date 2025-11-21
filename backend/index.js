@@ -5,6 +5,9 @@ import connectDB from "./db/db.js";
 import wardRouter from "./routes/ward.js";
 import roleRouter from "./routes/role.js";
 import employeeRouter from "./routes/employee.js";
+import medicationRouter from "./routes/medication.js";
+import chronicRouter from "./routes/chronics.js";
+import allergyRouter from "./routes/allergy.js";
 
 const startServer = async () => {
   await connectDB(); // wait for DB connection
@@ -16,6 +19,9 @@ const startServer = async () => {
   app.use("/api/ward", wardRouter);
   app.use("/api/role", roleRouter);
   app.use("/api/employee", employeeRouter);
+  app.use("/api/medication", medicationRouter);
+  app.use("/api/chronic", chronicRouter);
+  app.use("/api/allergy", allergyRouter);
 
   app.listen(process.env.PORT, () => {
     console.log(`Server is running on port ${process.env.PORT}`);

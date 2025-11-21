@@ -20,7 +20,7 @@ const EmployeeList = () => {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("User not authenticated");
 
-      const response = await axios.get("http://localhost:5000/api/employee/", {
+      const response = await axios.get("http://localhost:5000/api/employee", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -47,7 +47,7 @@ const EmployeeList = () => {
       await axios.delete(`http://localhost:5000/api/employee/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setEmployees(employees.filter((emp) => emp._id !== id));
+      setEmployees(employees.filter((employee) => employee._id !== id));
       toast.success("Employee deleted successfully");
     } catch (err) {
       console.error("Delete error:", err);
@@ -60,9 +60,23 @@ const EmployeeList = () => {
     { name: "First Name", selector: (row) => row.firstName, sortable: true },
     { name: "Last Name", selector: (row) => row.lastName, sortable: true },
     { name: "Email", selector: (row) => row.email, sortable: true },
-    { name: "Address", selector: (row) => row.address || "-", sortable: true },
-    { name: "Cell No", selector: (row) => row.cellNo || "-", sortable: true },
-    { name: "Role", selector: (row) => row.role?.role || "-", sortable: true },
+    { name: "Phone", selector: (row) => row.cellNo, sortable: true },
+    { name: "Role", selector: (row) => row.role?.role, sortable: true }, // Show role name
+    {
+      name: "Status",
+      selector: (row) => (
+        <span
+          className={`inline-block py-1 px-2 rounded-full text-xs ${
+            row.employeeStatus === "Active"
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
+        >
+          {row.employeeStatus}
+        </span>
+      ),
+      sortable: true,
+    },
     {
       name: "Action",
       cell: (row) => (
@@ -85,31 +99,19 @@ const EmployeeList = () => {
     },
   ];
 
-  // Filter employees by search
-  const filteredEmployees = employees.filter((emp) => {
+  // Filter employees by name, email, or status
+  const filteredEmployees = employees.filter((employee) => {
     const searchTerm = search.toLowerCase();
     return (
-      emp.firstName?.toLowerCase().includes(searchTerm) ||
-      emp.lastName?.toLowerCase().includes(searchTerm) ||
-      emp.email?.toLowerCase().includes(searchTerm) ||
-      emp.address?.toLowerCase().includes(searchTerm) ||
-      emp.cellNo?.toLowerCase().includes(searchTerm) ||
-      emp.role?.role?.toLowerCase().includes(searchTerm)
+      employee.firstName?.toLowerCase().includes(searchTerm) ||
+      employee.lastName?.toLowerCase().includes(searchTerm) ||
+      employee.email?.toLowerCase().includes(searchTerm) ||
+      employee.employeeStatus?.toLowerCase().includes(searchTerm)
     );
   });
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      {/* Navigation */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          to="/admin-dashboard"
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition"
-        >
-          ← Back
-        </Link>
-      </div>
-
       {/* Title + Search + Add */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
         <h3 className="text-2xl font-semibold text-gray-800">
@@ -118,7 +120,7 @@ const EmployeeList = () => {
         <div className="flex gap-2 flex-col sm:flex-row items-center">
           <input
             type="text"
-            placeholder="Search by name, email, role, or cell"
+            placeholder="Search by name, email, or status"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -133,17 +135,19 @@ const EmployeeList = () => {
       </div>
 
       {/* DataTable */}
-      <DataTable
-        columns={columns}
-        data={filteredEmployees}
-        pagination
-        highlightOnHover
-        striped
-        responsive
-        progressPending={loading}
-        noHeader
-        defaultSortField="firstName"
-      />
+      <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
+        <DataTable
+          columns={columns}
+          data={filteredEmployees}
+          pagination
+          highlightOnHover
+          striped
+          responsive
+          progressPending={loading}
+          noHeader
+          defaultSortField="firstName"
+        />
+      </div>
     </div>
   );
 };
