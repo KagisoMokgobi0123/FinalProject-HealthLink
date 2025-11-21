@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import dotenv from "dotenv";
+dotenv.config();
 
 export async function connectDB() {
   try {
@@ -13,3 +15,4 @@ export async function connectDB() {
     process.exit(1);
   }
 }
+export default connectDB;
