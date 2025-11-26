@@ -14,7 +14,16 @@ const startServer = async () => {
 
   const app = express();
 
-  app.use(cors());
+  app.use(
+    cors({
+      origin: [
+        process.env.ALLOW_ORIGIN_LOCAL, // local frontend
+        process.env.ALLOW_ORIGIN_PROD, // deployed frontend URL
+      ],
+      methods: ["GET", "POST", "PUT", "DELETE"],
+      credentials: true,
+    })
+  );
   app.use(express.json());
 
   app.use("/api/auth", authRouter);
