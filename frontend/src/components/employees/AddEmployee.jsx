@@ -8,6 +8,7 @@ const AddEmployee = () => {
     firstName: "",
     lastName: "",
     email: "",
+    password: "", // added password
     address: "",
     cellNo: "",
     role: "",
@@ -143,6 +144,23 @@ const AddEmployee = () => {
           />
           {errors.email && (
             <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+          )}
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="block mb-1 font-medium">Password</label>
+          <input
+            type="password"
+            name="password"
+            value={employeeData.password}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded ${
+              errors.password ? "border-red-500" : "border-gray-300"
+            }`}
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1">{errors.password}</p>
           )}
         </div>
 

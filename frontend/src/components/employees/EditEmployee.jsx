@@ -11,6 +11,7 @@ const EditEmployee = () => {
     firstName: "",
     lastName: "",
     email: "",
+    password: "", // added password
     address: "",
     cellNo: "",
     role: "",
@@ -38,6 +39,7 @@ const EditEmployee = () => {
             firstName,
             lastName,
             email,
+            password: "", // leave empty on edit
             address,
             cellNo,
             role,
@@ -75,7 +77,9 @@ const EditEmployee = () => {
     // Validation
     const newErrors = {};
     Object.keys(employeeData).forEach((key) => {
-      if (!employeeData[key]) newErrors[key] = `${key} is required`;
+      // Only require password if it has been changed
+      if (key !== "password" && !employeeData[key])
+        newErrors[key] = `${key} is required`;
     });
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -179,6 +183,25 @@ const EditEmployee = () => {
           />
           {errors.email && (
             <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+          )}
+        </div>
+
+        {/* Password */}
+        <div>
+          <label className="block mb-2 font-medium text-gray-700">
+            Password (leave blank to keep current)
+          </label>
+          <input
+            type="password"
+            name="password"
+            value={employeeData.password}
+            onChange={handleChange}
+            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
+              errors.password ? "border-red-500" : "border-gray-300"
+            }`}
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm mt-1">{errors.password}</p>
           )}
         </div>
 
