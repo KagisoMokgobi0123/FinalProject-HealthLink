@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
+const API = import.meta.env.VITE_API_URL;
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -11,10 +12,10 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        { email, password }
-      );
+      const response = await axios.post(`${API}/api/auth/login`, {
+        email,
+        password,
+      });
       console.log(response);
       if (response.data.success) {
         login(response.data.user);
