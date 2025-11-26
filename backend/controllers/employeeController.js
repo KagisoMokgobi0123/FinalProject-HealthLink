@@ -1,6 +1,6 @@
 import Employee from "../models/Employee.js";
 import Role from "../models/Role.js";
-import bcrypt from "bcryptj";
+import bcrypt from "bcrypt";
 
 // GET ALL EMPLOYEES
 export const getEmployees = async (req, res) => {
