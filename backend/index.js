@@ -16,8 +16,8 @@ const startServer = async () => {
 
   // Allowed origins for CORS
   const allowedOrigins = [
-    process.env.ALLOW_ORIGIN_LOCAL, // e.g., http://localhost:5173
-    process.env.ALLOW_ORIGIN_PROD, // e.g., https://final-project-health-link.vercel.app
+    process.env.ALLOW_ORIGIN_LOCAL,
+    process.env.ALLOW_ORIGIN_PROD,
   ];
 
   // CORS middleware
@@ -45,10 +45,10 @@ const startServer = async () => {
   app.use("/api/chronic", chronicRouter);
   app.use("/api/allergy", allergyRouter);
 
-  // Catch-all route for undefined API endpoints
-  app.all("/api/:path(*)", (req, res) => {
-    res.status(404).json({ error: "API endpoint not found" });
-  });
+  // // Catch-all route for undefined API endpoints
+  // app.all("/api/:path(*)", (req, res) => {
+  //   res.status(404).json({ error: "API endpoint not found" });
+  // });
 
   // Start server
   const PORT = process.env.PORT || 5000;
