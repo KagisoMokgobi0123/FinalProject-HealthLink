@@ -4,33 +4,44 @@ import AdminDashboard from "./pages/AdminDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
 import PrivateRoutes from "./utils/PrivateRoutes";
 import RoleBaseRoutes from "./utils/RoleBaseRoutes";
+
+// Admin components
 import AdminSummary from "./components/dashboard/AdminSummary";
 import EmployeeList from "./components/employees/EmployeeList";
-import WardList from "./components/ward/WardList";
-import MedicationList from "./components/medication/MedicationList";
-import AllergyList from "./components/allergies/AllergyList";
-import ChronicList from "./components/chronic/ChronicList";
-import RoleList from "./components/role/RoleList";
-import AddBed from "./components/ward/AddBed";
-import EditRole from "./components/role/EditRole";
-import AddRole from "./components/role/AddRoles";
 import AddEmployee from "./components/employees/AddEmployee";
 import EditEmployee from "./components/employees/EditEmployee";
+import WardList from "./components/ward/WardList";
+import AddBed from "./components/ward/AddBed";
+import EditBed from "./components/ward/EditBed";
+import MedicationList from "./components/medication/MedicationList";
 import AddMedication from "./components/medication/AddMedication";
 import EditMedication from "./components/medication/EditMedication";
-import AddChronics from "./components/chronic/AddChronic";
-import EditChronics from "./components/chronic/EditChronic";
+import AllergyList from "./components/allergies/AllergyList";
 import AddAllergy from "./components/allergies/AddAllergy";
 import EditAllergy from "./components/allergies/EditAllergy";
+import ChronicList from "./components/chronic/ChronicList";
+import AddChronics from "./components/chronic/AddChronic";
+import EditChronics from "./components/chronic/EditChronic";
+import RoleList from "./components/role/RoleList";
+import AddRole from "./components/role/AddRoles";
+import EditRole from "./components/role/EditRole";
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import EditBed from "./components/ward/EditBed";
+import { useAuth } from "./context/authContext";
 
 function App() {
+  const { user } = useAuth();
+
+  // Default redirect based on role
+  const getDefaultRoute = () => {
+    if (!user) return "/login";
+    return user.role === "admin" ? "/admin-dashboard" : "/employee-dashboard";
+  };
+
   return (
     <BrowserRouter>
-      {/* Toast Notifications (GLOBAL) */}
+      {/* Toast Notifications */}
       <ToastContainer
         position="bottom-right"
         autoClose={2000}
@@ -42,12 +53,14 @@ function App() {
 
       <Routes>
         {/* Default redirect */}
-        <Route path="/" element={<Navigate to="/admin-dashboard" />} />
+        <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} />
+
+        {/* Public route */}
         <Route path="/login" element={<Login />} />
 
-        {/* Admin routes with auth + role protection */}
+        {/* Admin protected routes */}
         <Route
-          path="/admin-dashboard"
+          path="/admin-dashboard/*"
           element={
             <PrivateRoutes>
               <RoleBaseRoutes requiredRole={["admin"]}>
@@ -58,27 +71,39 @@ function App() {
         >
           <Route index element={<AdminSummary />} />
           <Route path="employees" element={<EmployeeList />} />
+          <Route path="add-employee" element={<AddEmployee />} />
+          <Route path="edit-employee/:id" element={<EditEmployee />} />
           <Route path="ward" element={<WardList />} />
           <Route path="add-bed" element={<AddBed />} />
           <Route path="edit-bed/:id" element={<EditBed />} />
           <Route path="medication" element={<MedicationList />} />
-          <Route path="allergies" element={<AllergyList />} />
-          <Route path="chronic" element={<ChronicList />} />
-          <Route path="role" element={<RoleList />} />
-          <Route path="edit-role/:id" element={<EditRole />} />
-          <Route path="add-role" element={<AddRole />} />
-          <Route path="edit-employee/:id" element={<EditEmployee />} />
-          <Route path="add-employee" element={<AddEmployee />} />
-          <Route path="edit-medication/:id" element={<EditMedication />} />
           <Route path="add-medication" element={<AddMedication />} />
-          <Route path="edit-chronic/:id" element={<EditChronics />} />
-          <Route path="add-chronic" element={<AddChronics />} />
-          <Route path="edit-allergy/:id" element={<EditAllergy />} />
+          <Route path="edit-medication/:id" element={<EditMedication />} />
+          <Route path="allergies" element={<AllergyList />} />
           <Route path="add-allergy" element={<AddAllergy />} />
+          <Route path="edit-allergy/:id" element={<EditAllergy />} />
+          <Route path="chronic" element={<ChronicList />} />
+          <Route path="add-chronic" element={<AddChronics />} />
+          <Route path="edit-chronic/:id" element={<EditChronics />} />
+          <Route path="role" element={<RoleList />} />
+          <Route path="add-role" element={<AddRole />} />
+          <Route path="edit-role/:id" element={<EditRole />} />
         </Route>
 
-        {/* Employee dashboard */}
-        <Route path="/employee-dashboard" element={<EmployeeDashboard />} />
+        {/* Employee protected route */}
+        <Route
+          path="/employee-dashboard"
+          element={
+            <PrivateRoutes>
+              <RoleBaseRoutes requiredRole={["employee"]}>
+                <EmployeeDashboard />
+              </RoleBaseRoutes>
+            </PrivateRoutes>
+          }
+        />
+
+        {/* Catch-all redirect */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
