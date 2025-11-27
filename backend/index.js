@@ -14,32 +14,26 @@ const startServer = async () => {
 
   const app = express();
 
-  // CORS configuration
+  // Allowed origins for CORS
   const allowedOrigins = [
     process.env.ALLOW_ORIGIN_LOCAL, // e.g., http://localhost:5173
     process.env.ALLOW_ORIGIN_PROD, // e.g., https://final-project-health-link.vercel.app
   ];
 
+  // CORS middleware
   app.use(
     cors({
       origin: (origin, callback) => {
-        // Allow requests with no origin (like Postman)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
-          return callback(null, true);
-        } else {
-          return callback(new Error("Not allowed by CORS"));
-        }
+        if (!origin) return callback(null, true); // allow requests like Postman
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        return callback(new Error("Not allowed by CORS"));
       },
       methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      credentials: true, // set to true if your frontend sends cookies or auth headers
+      credentials: true, // allow cookies/auth headers if needed
     })
   );
 
-  // Handle preflight requests for all routes
-  app.options("*", cors());
-
-  // Parse JSON
+  // Parse JSON requests
   app.use(express.json());
 
   // Routes
@@ -51,6 +45,12 @@ const startServer = async () => {
   app.use("/api/chronic", chronicRouter);
   app.use("/api/allergy", allergyRouter);
 
+  // Catch-all route for undefined API endpoints
+  app.all("/api/*", (req, res) => {
+    res.status(404).json({ error: "API endpoint not found" });
+  });
+
+  // Start server
   const PORT = process.env.PORT || 5000;
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
