@@ -21,7 +21,7 @@ const startServer = async () => {
         process.env.ALLOW_ORIGIN_PROD, // deployed frontend URL
       ],
       methods: ["GET", "POST", "PUT", "DELETE"],
-      credentials: true,
+      credentials: false,
     })
   );
   app.use(express.json());
