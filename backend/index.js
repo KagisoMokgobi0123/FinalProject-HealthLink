@@ -46,7 +46,7 @@ const startServer = async () => {
   app.use("/api/allergy", allergyRouter);
 
   // Catch-all route for undefined API endpoints
-  app.all("/api/*", (req, res) => {
+  app.all("/api/:path(*)", (req, res) => {
     res.status(404).json({ error: "API endpoint not found" });
   });
 
