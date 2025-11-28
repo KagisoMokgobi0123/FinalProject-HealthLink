@@ -33,7 +33,6 @@ const startServer = async () => {
           const allowedOrigins = [
             process.env.ALLOW_ORIGIN_LOCAL,
             process.env.ALLOW_ORIGIN_PROD,
-            "https://final-project-health-link.vercel.app",
           ];
 
           if (allowedOrigins.includes(origin)) {
