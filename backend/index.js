@@ -28,8 +28,18 @@ const startServer = async () => {
     app.use(
       cors({
         origin: (origin, callback) => {
-          if (!origin) return callback(null, true); // Postman, Curl
-          if (allowedOrigins.includes(origin)) return callback(null, true);
+          if (!origin) return callback(null, true);
+
+          const allowedOrigins = [
+            process.env.ALLOW_ORIGIN_LOCAL,
+            process.env.ALLOW_ORIGIN_PROD,
+            "https://final-project-health-link.vercel.app",
+          ];
+
+          if (allowedOrigins.includes(origin)) {
+            return callback(null, true);
+          }
+
           console.warn("❌ Blocked by CORS:", origin);
           return callback(new Error("Not allowed by CORS"));
         },
