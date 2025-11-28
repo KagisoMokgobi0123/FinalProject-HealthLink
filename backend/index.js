@@ -1,7 +1,6 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import path from "path";
 import connectDB from "./db/db.js";
 
 import authRouter from "./routes/auth.js";
@@ -25,11 +24,11 @@ const startServer = async () => {
       process.env.ALLOW_ORIGIN_PROD,
     ].filter(Boolean);
 
-    // CORS middleware
+    // CORS
     app.use(
       cors({
         origin: (origin, callback) => {
-          if (!origin) return callback(null, true); // Postman, curl
+          if (!origin) return callback(null, true); // Postman, Curl
           if (allowedOrigins.includes(origin)) return callback(null, true);
           console.warn("❌ Blocked by CORS:", origin);
           return callback(new Error("Not allowed by CORS"));
@@ -39,10 +38,10 @@ const startServer = async () => {
       })
     );
 
-    // Body parser
+    // JSON body parser
     app.use(express.json());
 
-    // API routes (must come before React catch-all)
+    // API routes
     app.use("/api/auth", authRouter);
     app.use("/api/ward", wardRouter);
     app.use("/api/role", roleRouter);
@@ -51,21 +50,13 @@ const startServer = async () => {
     app.use("/api/chronic", chronicRouter);
     app.use("/api/allergy", allergyRouter);
 
-    // Root health check
-    app.get("/api", (req, res) => {
-      res.json({ status: "OK", message: "HealthLink API is running..." });
+    // Health check
+    app.get("/", (req, res) => {
+      res.send("HealthLink Backend API is running...");
     });
 
-    // Serve React in production
-    if (process.env.NODE_ENV === "production") {
-      const __dirname = path.resolve();
-      app.use(express.static(path.join(__dirname, "client/dist")));
-
-      // React catch-all (for client-side routing)
-      app.get("*", (req, res) => {
-        res.sendFile(path.join(__dirname, "client/dist", "index.html"));
-      });
-    }
+    // ❗ REMOVE React serving — Vercel hosts frontend
+    // (This part removed completely)
 
     // Global error handler
     app.use((err, req, res, next) => {
