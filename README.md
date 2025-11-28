@@ -4,7 +4,7 @@
 
 Run the roles seed (empRole.js) first. This creates initial roles like admin, doctor, nurse, etc.
 
-Run the user seed (userSeed.js) next. This creates an admin user linked to the admin role.
+Run the user seed (userSeed.js) next and open the collection to update status to active. This creates an admin user linked to the admin role.
 
 Make sure your backend .env file is set up before running the seeds.
 
