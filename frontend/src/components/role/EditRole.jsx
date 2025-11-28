@@ -15,19 +15,16 @@ const EditRole = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
-
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   // Fetch role data on mount
   useEffect(() => {
     const fetchRole = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:5000/api/role/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+        const response = await axios.get(`${API_URL}/api/role/${id}`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
 
         if (response.data.success) {
           const { role, roleDescription, roleStatus } = response.data.role;
@@ -73,15 +70,11 @@ const EditRole = () => {
 
     try {
       setLoading(true);
-      const response = await axios.put(
-        `http://localhost:5000/api/role/${id}`,
-        roleData,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await axios.put(`${API_URL}/api/role/${id}`, roleData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
 
       if (response.data.success) {
         toast.success("Role updated successfully!");
@@ -111,7 +104,6 @@ const EditRole = () => {
         >
           ← Back
         </Link>
-        <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
       </div>
 
       <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center sm:text-left">

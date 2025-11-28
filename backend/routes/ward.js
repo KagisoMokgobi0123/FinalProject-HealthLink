@@ -1,27 +1,28 @@
 import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import {
-  addBed,
-  getBeds,
-  updateBed,
-  deleteBed,
-  getBedById,
+  getWards,
+  getWardById,
+  addWard,
+  updateWard,
+  deleteWard,
 } from "../controllers/wardController.js";
 
 const router = express.Router();
 
-// Get all beds
-router.get("/", authMiddleware, getBeds);
-// Get bed by id
-router.get("/:id", authMiddleware, getBedById);
+// Get all wards/beds
+router.get("/", authMiddleware, getWards);
 
-// Add new bed
-router.post("/add", authMiddleware, addBed);
+// Get ward/bed by ID
+router.get("/:id", authMiddleware, getWardById);
 
-// Update bed
-router.put("/:id", authMiddleware, updateBed);
+// Add ward/bed (Admin only)
+router.post("/add", authMiddleware, addWard);
 
-// Delete bed
-router.delete("/:id", authMiddleware, deleteBed);
+// Update ward/bed (Admin only)
+router.put("/:id", authMiddleware, updateWard);
+
+// Soft delete ward/bed (Admin only)
+router.delete("/:id", authMiddleware, deleteWard);
 
 export default router;

@@ -1,134 +1,87 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 
-const AddMedication = () => {
-  const [medicationData, setMedicationData] = useState({
-    drug: "",
-    description: "",
-    status: "Active", // Status is fixed as "Active"
-  });
-  const [errors, setErrors] = useState({});
+export default function AddMedication({ onUpdate }) {
+  const [drug, setDrug] = useState("");
+  const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // Handle input change
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setMedicationData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({
-      ...prev,
-      [name]: value ? "" : `${name} is required`,
-    }));
-  };
-
-  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validate fields
-    const newErrors = {};
-    Object.keys(medicationData).forEach((key) => {
-      if (!medicationData[key]) newErrors[key] = `${key} is required`;
-    });
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
+    setLoading(true);
 
     try {
-      setLoading(true);
       const token = localStorage.getItem("token");
-
-      const response = await axios.post(
-        "http://localhost:5000/api/medication/add",
-        medicationData,
+      await axios.post(
+        `${API_URL}/api/medication/add`,
+        { drug, description },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (response.data.success) {
-        toast.success("Medication added successfully!");
-        setMedicationData({ drug: "", description: "", status: "Active" });
-        setTimeout(() => navigate("/admin-dashboard/medication"), 800);
-      }
-    } catch (error) {
-      console.error("Add Medication Error:", error.response?.data || error);
-      toast.error(
-        error.response?.data?.error || "Server error while adding medication"
-      );
+      toast.success("Medication added successfully", {
+        position: "bottom-right",
+      });
+
+      if (onUpdate) onUpdate();
+
+      // Redirect to MedicationList
+      navigate("/admin-dashboard/medication");
+    } catch (err) {
+      console.error(err);
+      toast.error(err.response?.data?.error || "Failed to add medication", {
+        position: "bottom-right",
+      });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <Link
-        to="/admin-dashboard/medication"
-        className="mb-4 inline-block text-blue-600 hover:underline"
-      >
-        ← Back
-      </Link>
-
-      <h3 className="text-2xl font-bold mb-6 text-center">
+    <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
+      <h2 className="text-2xl font-bold mb-6 text-center">
         Add New Medication
-      </h3>
+      </h2>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-4 bg-white p-6 rounded shadow-md"
-      >
-        {/* Drug Name */}
-        <div className="flex flex-col">
-          <label className="mb-1 font-medium">Drug Name</label>
-          <input
-            type="text"
-            name="drug"
-            value={medicationData.drug}
-            onChange={handleChange}
-            placeholder="Enter drug name"
-            className={`p-2 border rounded ${
-              errors.drug ? "border-red-500" : "border-gray-300"
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <input
+          type="text"
+          placeholder="Drug Name"
+          value={drug}
+          onChange={(e) => setDrug(e.target.value)}
+          className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+          required
+        />
+        <textarea
+          placeholder="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+          required
+        />
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            className={`flex-1 bg-green-600 text-white p-3 rounded hover:bg-green-700 transition-colors ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
-          />
-          {errors.drug && (
-            <p className="text-red-500 text-sm mt-1">{errors.drug}</p>
-          )}
+            disabled={loading}
+          >
+            {loading ? "Adding..." : "Add Medication"}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate("/admin-dashboard/medication")}
+            className="flex-1 bg-gray-500 text-white p-3 rounded hover:bg-gray-600 transition-colors"
+          >
+            Back
+          </button>
         </div>
-
-        {/* Description */}
-        <div className="flex flex-col">
-          <label className="mb-1 font-medium">Description</label>
-          <textarea
-            name="description"
-            value={medicationData.description}
-            onChange={handleChange}
-            placeholder="Enter a short description"
-            rows="3"
-            className={`p-2 border rounded ${
-              errors.description ? "border-red-500" : "border-gray-300"
-            }`}
-          ></textarea>
-          {errors.description && (
-            <p className="text-red-500 text-sm mt-1">{errors.description}</p>
-          )}
-        </div>
-
-        {/* No status input field as status is defaulted to "Active" */}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full bg-blue-600 text-white py-2 rounded font-medium transition ${
-            loading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
-          }`}
-        >
-          {loading ? "Adding..." : "Add Medication"}
-        </button>
       </form>
     </div>
   );
-};
-
-export default AddMedication;
+}

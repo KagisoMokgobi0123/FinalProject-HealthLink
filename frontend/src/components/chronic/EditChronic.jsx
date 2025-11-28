@@ -1,211 +1,120 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const EditChronic = () => {
-  const { id } = useParams(); // Get the chronic condition ID from the URL
-  const navigate = useNavigate();
+export default function EditChronic({ id, isOpen, onClose, onUpdate }) {
+  const [chronicName, setChronicName] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("Active");
 
-  const [chronicData, setChronicData] = useState({
-    chronicName: "", // Ensure it matches the API schema field
-    description: "",
-    status: "Active", // Default to "Active"
-  });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // Fetch chronic condition data on mount
   useEffect(() => {
-    const fetchChronic = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/api/chronic/${id}`, // Endpoint to fetch chronic condition
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
+    if (isOpen && id) fetchChronic();
+  }, [isOpen, id]);
 
-        if (response.data.success) {
-          const { chronicName, description, status } = response.data.chronic;
-          setChronicData({
-            chronicName: chronicName || "",
-            description: description || "",
-            status: status || "Active",
-          });
-        } else {
-          toast.error(
-            response.data.error || "Failed to fetch chronic condition data"
-          );
-        }
-      } catch (err) {
-        console.error("Error fetching chronic condition:", err);
-        toast.error(
-          err.response?.data?.error || "Failed to fetch chronic condition data"
-        );
-      } finally {
-        setFetching(false);
-      }
-    };
+  const fetchChronic = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await axios.get(`${API_URL}/api/chronic/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    fetchChronic();
-  }, [id]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setChronicData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({
-      ...prev,
-      [name]: value ? "" : `${name} is required`,
-    }));
+      const chronic = res.data.chronic;
+      setChronicName(chronic.chronicName);
+      setDescription(chronic.description);
+      setStatus(chronic.status || "Active");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch chronic details", {
+        position: "bottom-right",
+      });
+    }
   };
 
-  const handleSubmit = async (e) => {
+  const handleUpdate = async (e) => {
     e.preventDefault();
 
-    // Validation
-    const newErrors = {};
-    Object.keys(chronicData).forEach((key) => {
-      if (!chronicData[key]) newErrors[key] = `${key} is required`;
-    });
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
     try {
-      setLoading(true);
-      const response = await axios.put(
-        `http://localhost:5000/api/chronic/${id}`, // Endpoint to update chronic condition
-        chronicData,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+      const token = localStorage.getItem("token");
+
+      await axios.put(
+        `${API_URL}/api/chronic/${id}`,
+        { chronicName, description, status },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (response.data.success) {
-        toast.success("Chronic condition updated successfully!");
-        setTimeout(() => navigate("/admin-dashboard/chronic"), 1000); // Redirect to chronic conditions list
-      }
+      toast.success("Chronic condition updated successfully", {
+        position: "bottom-right",
+      });
+
+      onUpdate(); // refresh list
+      onClose(); // close modal
     } catch (err) {
-      console.error("Update chronic condition error:", err);
-      toast.error(
-        err.response?.data?.error ||
-          "Server error while updating chronic condition"
-      );
-    } finally {
-      setLoading(false);
+      console.error(err);
+      toast.error("Failed to update chronic condition", {
+        position: "bottom-right",
+      });
     }
   };
 
-  if (fetching) {
-    return (
-      <div className="text-center mt-10">Loading chronic condition data...</div>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      {/* Back button */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          to="/admin-dashboard/chroniclist"
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition"
-        >
-          ← Back
-        </Link>
-        <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+      <div className="bg-white w-full max-w-lg p-6 rounded-lg shadow-lg relative">
+        <h2 className="text-xl font-bold mb-4">Edit Chronic Condition</h2>
+
+        <form onSubmit={handleUpdate} className="space-y-4">
+          <div>
+            <label className="block font-semibold">Chronic Name:</label>
+            <input
+              type="text"
+              value={chronicName}
+              onChange={(e) => setChronicName(e.target.value)}
+              className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
+            />
+          </div>
+
+          <div>
+            <label className="block font-semibold">Description:</label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full p-2 border rounded h-32 focus:ring focus:ring-blue-300"
+            ></textarea>
+          </div>
+
+          <div>
+            <label className="block font-semibold">Status:</label>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full p-2 border rounded"
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+
+          <div className="flex justify-between mt-6">
+            <button
+              type="button"
+              onClick={onClose}
+              className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="submit"
+              className="bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded"
+            >
+              Save Changes
+            </button>
+          </div>
+        </form>
       </div>
-
-      <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center sm:text-left">
-        Edit Chronic Condition
-      </h3>
-
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 bg-white p-6 sm:p-8 rounded-xl shadow"
-      >
-        {/* Chronic Name */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Chronic Name
-          </label>
-          <input
-            type="text"
-            name="chronicName"
-            value={chronicData.chronicName}
-            onChange={handleChange}
-            className={
-              errors.chronicName
-                ? "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition border-red-500"
-                : "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition border-gray-300"
-            }
-          />
-          {errors.chronicName && (
-            <p className="text-red-500 text-sm mt-1">{errors.chronicName}</p>
-          )}
-        </div>
-
-        {/* Chronic Description */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={chronicData.description}
-            onChange={handleChange}
-            className={
-              errors.description
-                ? "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition border-red-500"
-                : "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition border-gray-300"
-            }
-            rows={3}
-          ></textarea>
-          {errors.description && (
-            <p className="text-red-500 text-sm mt-1">{errors.description}</p>
-          )}
-        </div>
-
-        {/* Status */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">Status</label>
-          <select
-            name="status"
-            value={chronicData.status}
-            onChange={handleChange}
-            className={
-              errors.status
-                ? "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition border-red-500"
-                : "w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition border-gray-300"
-            }
-          >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-          {errors.status && (
-            <p className="text-red-500 text-sm mt-1">{errors.status}</p>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full bg-blue-600 text-white py-2 rounded-lg font-medium transition ${
-            loading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
-          }`}
-        >
-          {loading ? "Updating..." : "Update Chronic Condition"}
-        </button>
-      </form>
     </div>
   );
-};
-
-export default EditChronic;
+}

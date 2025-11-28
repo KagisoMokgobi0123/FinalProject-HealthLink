@@ -1,154 +1,165 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
-import DataTable from "react-data-table-component";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import EditMedication from "./EditMedication";
 
-const MedicationList = () => {
+export default function MedicationList() {
   const [medications, setMedications] = useState([]);
+  const [filteredMeds, setFilteredMeds] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  // Fetch all medications
-  useEffect(() => {
-    fetchMedications();
-  }, []);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const navigate = useNavigate();
 
   const fetchMedications = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("User not authenticated");
-
-      const response = await axios.get(
-        "http://localhost:5000/api/medication/",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (response.data.success) {
-        setMedications(response.data.medications || []);
-      } else {
-        toast.error(response.data.error || "Failed to fetch medications");
-      }
+      const res = await axios.get(`${API_URL}/api/medication`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setMedications(res.data.medications || []);
+      setFilteredMeds(res.data.medications || []);
     } catch (err) {
-      console.error("Error fetching medications:", err);
-      toast.error("Failed to fetch medication data");
+      console.error(err);
+      toast.error("Failed to fetch medications", { position: "bottom-right" });
+      setMedications([]);
+      setFilteredMeds([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete a medication
+  useEffect(() => {
+    fetchMedications();
+  }, []);
+
+  useEffect(() => {
+    const query = search.toLowerCase();
+    const filtered = medications.filter(
+      (m) =>
+        m.drug.toLowerCase().includes(query) ||
+        m.description.toLowerCase().includes(query)
+    );
+    setFilteredMeds(filtered);
+  }, [search, medications]);
+
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this medication?"))
+    if (!window.confirm("Are you sure you want to deactivate this medication?"))
       return;
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/medication/${id}`, {
+      await axios.delete(`${API_URL}/api/medication/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setMedications(medications.filter((med) => med._id !== id));
-      toast.success("Medication deleted successfully");
+      toast.success("Medication deactivated successfully", {
+        position: "bottom-right",
+      });
+      fetchMedications();
     } catch (err) {
-      console.error("Delete error:", err);
-      toast.error("Failed to delete medication");
+      console.error(err);
+      toast.error("Failed to deactivate medication", {
+        position: "bottom-right",
+      });
     }
   };
 
-  // Define DataTable columns
-  const columns = [
-    { name: "Drug Name", selector: (row) => row.drug, sortable: true },
-    {
-      name: "Description",
-      selector: (row) => row.description,
-      sortable: true,
-    },
-    { name: "Status", selector: (row) => row.status, sortable: true },
-    {
-      name: "Action",
-      cell: (row) => (
-        <div className="flex gap-2">
-          <Link
-            to={`/admin-dashboard/edit-medication/${row._id}`}
-            className="px-2 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition"
-          >
-            Edit
-          </Link>
+  return (
+    <div className="p-4 min-h-screen bg-gray-50">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h1 className="text-2xl font-bold text-gray-800">
+          Medication Management
+        </h1>
+        <div className="flex gap-2 flex-wrap">
           <button
-            onClick={() => handleDelete(row._id)}
-            className="px-2 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
+            onClick={() => navigate("/admin-dashboard")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
           >
-            Delete
+            Back to Dashboard
+          </button>
+          <button
+            onClick={() => navigate("/admin-dashboard/add-medication")}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
+          >
+            Add Medication
           </button>
         </div>
-      ),
-      ignoreRowClick: true,
-    },
-  ];
-
-  // Filter medications by drug name, description, or status
-  const filteredMedications = medications.filter((med) => {
-    const searchTerm = search.toLowerCase();
-    return (
-      med.drug?.toLowerCase().includes(searchTerm) ||
-      med.description?.toLowerCase().includes(searchTerm) ||
-      med.status?.toLowerCase().includes(searchTerm)
-    );
-  });
-
-  return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Navigation */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          to="/admin-dashboard"
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition"
-        >
-          ← Back
-        </Link>
       </div>
 
-      {/* Title + Search + Add */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-        <h3 className="text-2xl font-semibold text-gray-800">
-          Manage Medications
-        </h3>
-        <div className="flex gap-2 flex-col sm:flex-row items-center">
-          <input
-            type="text"
-            placeholder="Search by drug name, description, or status"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Link
-            to="/admin-dashboard/add-medication"
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium shadow hover:bg-blue-700 transition"
-          >
-            Add New Medication
-          </Link>
-        </div>
-      </div>
-
-      {/* Horizontal Scroll for DataTable */}
-      <div className="overflow-x-auto">
-        <DataTable
-          columns={columns}
-          data={filteredMedications}
-          pagination
-          highlightOnHover
-          striped
-          responsive
-          progressPending={loading}
-          noHeader
-          defaultSortField="drug"
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by drug or description..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="py-2 px-4 text-left">Drug</th>
+              <th className="py-2 px-4 text-left">Description</th>
+              <th className="py-2 px-4 text-left">Status</th>
+              <th className="py-2 px-4 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="4" className="text-center py-4 text-gray-500">
+                  Loading...
+                </td>
+              </tr>
+            ) : filteredMeds.length > 0 ? (
+              filteredMeds.map((med) => (
+                <tr key={med._id} className="border-b hover:bg-gray-50">
+                  <td className="py-2 px-4">{med.drug}</td>
+                  <td className="py-2 px-4">{med.description}</td>
+                  <td className="py-2 px-4 capitalize">
+                    {med.status || "Active"}
+                  </td>
+                  <td className="py-2 px-4 flex justify-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => setEditingId(med._id)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(med._id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                    >
+                      Deactivate
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-center py-4 text-gray-500">
+                  No medications found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {editingId && (
+        <EditMedication
+          id={editingId}
+          isOpen={Boolean(editingId)}
+          onClose={() => setEditingId(null)}
+          onUpdate={fetchMedications}
+        />
+      )}
     </div>
   );
-};
-
-export default MedicationList;
+}

@@ -1,171 +1,171 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import DataTable from "react-data-table-component";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import EditChronic from "./EditChronic";
 
-const Chroniclist = () => {
-  const [chronicConditions, setChronicConditions] = useState([]);
+export default function ChronicList() {
+  const [chronics, setChronics] = useState([]);
+  const [filteredChronics, setFilteredChronics] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingChronicId, setEditingChronicId] = useState(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  // Fetch all chronic conditions
-  useEffect(() => {
-    fetchChronicConditions();
-  }, []);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const navigate = useNavigate();
 
-  const fetchChronicConditions = async () => {
+  const fetchChronics = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("User not authenticated");
-
-      const response = await axios.get("http://localhost:5000/api/chronic", {
+      const res = await axios.get(`${API_URL}/api/chronic`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (response.data.success) {
-        setChronicConditions(response.data.chronics || []);
-      } else {
-        toast.error(
-          response.data.error || "Failed to fetch chronic conditions"
-        );
-      }
+      setChronics(res.data.chronics || []);
+      setFilteredChronics(res.data.chronics || []);
     } catch (err) {
-      console.error("Error fetching chronic conditions:", err);
-      toast.error("Failed to fetch chronic condition data");
+      console.error(err);
+      toast.error("Failed to fetch chronic conditions", {
+        position: "bottom-right",
+      });
+      setChronics([]);
+      setFilteredChronics([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete a chronic condition
+  useEffect(() => {
+    fetchChronics();
+  }, []);
+
+  useEffect(() => {
+    const query = search.toLowerCase();
+    const filtered = chronics.filter(
+      (c) =>
+        c.chronicName.toLowerCase().includes(query) ||
+        c.description.toLowerCase().includes(query)
+    );
+    setFilteredChronics(filtered);
+  }, [search, chronics]);
+
   const handleDelete = async (id) => {
     if (
-      !window.confirm("Are you sure you want to delete this chronic condition?")
+      !window.confirm(
+        "Are you sure you want to deactivate this chronic condition?"
+      )
     )
       return;
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/chronic/${id}`, {
+      await axios.delete(`${API_URL}/api/chronic/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setChronicConditions(
-        chronicConditions.filter((condition) => condition._id !== id)
-      );
-      toast.success("Chronic condition deleted successfully");
+      toast.success("Chronic condition deactivated successfully", {
+        position: "bottom-right",
+      });
+      fetchChronics();
     } catch (err) {
-      console.error("Delete error:", err);
-      toast.error("Failed to delete chronic condition");
+      console.error(err);
+      toast.error("Failed to deactivate chronic condition", {
+        position: "bottom-right",
+      });
     }
   };
 
-  // Define DataTable columns
-  const columns = [
-    {
-      name: "Condition Name",
-      selector: (row) => row.chronicName,
-      sortable: true,
-    },
-    { name: "Description", selector: (row) => row.description, sortable: true },
-    {
-      name: "Status",
-      selector: (row) => (
-        <span
-          className={`inline-block py-1 px-2 rounded-full text-xs ${
-            row.status === "Active"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {row.status}
-        </span>
-      ),
-      sortable: true,
-    },
-    {
-      name: "Action",
-      cell: (row) => (
-        <div className="flex gap-2">
-          <Link
-            to={`/admin-dashboard/edit-chronic/${row._id}`}
-            className="px-2 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition"
-          >
-            Edit
-          </Link>
-          <button
-            onClick={() => handleDelete(row._id)}
-            className="px-2 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-      ignoreRowClick: true,
-    },
-  ];
-
-  // Filter chronic conditions by name, description, or status
-  const filteredChronicConditions = chronicConditions.filter((condition) => {
-    const searchTerm = search.toLowerCase();
-    return (
-      condition.chronicName?.toLowerCase().includes(searchTerm) ||
-      condition.description?.toLowerCase().includes(searchTerm) ||
-      condition.status?.toLowerCase().includes(searchTerm)
-    );
-  });
-
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Navigation */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          to="/admin-dashboard"
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition"
-        >
-          ← Back
-        </Link>
-      </div>
-
-      {/* Title + Search + Add */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-        <h3 className="text-2xl font-semibold text-gray-800">
-          Manage Chronic Conditions
-        </h3>
-        <div className="flex gap-2 flex-col sm:flex-row items-center">
-          <input
-            type="text"
-            placeholder="Search by name, description, or status"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Link
-            to="/admin-dashboard/add-chronic"
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium shadow hover:bg-blue-700 transition"
+    <div className="p-4 min-h-screen bg-gray-50">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h1 className="text-2xl font-bold text-gray-800">
+          Chronic Condition Management
+        </h1>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => navigate("/admin-dashboard")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          >
+            Back to Dashboard
+          </button>
+          <button
+            onClick={() => navigate("/admin-dashboard/add-chronic")}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
           >
             Add New Chronic Condition
-          </Link>
+          </button>
         </div>
       </div>
 
-      {/* DataTable */}
-      <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
-        <DataTable
-          columns={columns}
-          data={filteredChronicConditions}
-          pagination
-          highlightOnHover
-          striped
-          responsive
-          progressPending={loading}
-          noHeader
-          defaultSortField="chronicName"
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by name or description..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="py-2 px-4 text-left">Name</th>
+              <th className="py-2 px-4 text-left">Description</th>
+              <th className="py-2 px-4 text-left">Status</th>
+              <th className="py-2 px-4 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="4" className="text-center py-4 text-gray-500">
+                  Loading...
+                </td>
+              </tr>
+            ) : filteredChronics.length > 0 ? (
+              filteredChronics.map((chronic) => (
+                <tr key={chronic._id} className="border-b hover:bg-gray-50">
+                  <td className="py-2 px-4">{chronic.chronicName}</td>
+                  <td className="py-2 px-4">{chronic.description}</td>
+                  <td className="py-2 px-4 capitalize">
+                    {chronic.status || "Active"}
+                  </td>
+                  <td className="py-2 px-4 flex justify-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => setEditingChronicId(chronic._id)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(chronic._id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                    >
+                      Deactivate
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-center py-4 text-gray-500">
+                  No chronic conditions found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {editingChronicId && (
+        <EditChronic
+          id={editingChronicId}
+          isOpen={Boolean(editingChronicId)}
+          onClose={() => setEditingChronicId(null)}
+          onUpdate={fetchChronics}
+        />
+      )}
     </div>
   );
-};
-
-export default Chroniclist;
+}

@@ -11,7 +11,7 @@ const AddRole = () => {
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   // Handle input change
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,11 +40,9 @@ const AddRole = () => {
       setLoading(true);
       const token = localStorage.getItem("token");
 
-      const response = await axios.post(
-        "http://localhost:5000/api/role/add",
-        roleData,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await axios.post(`${API_URL}/api/role/add`, roleData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (response.data.success) {
         toast.success("Role added successfully!");

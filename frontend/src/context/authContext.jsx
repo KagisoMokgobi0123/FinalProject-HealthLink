@@ -1,72 +1,50 @@
+import { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
-import { createContext, useContext, useEffect, useState } from "react";
 
-const userContext = createContext();
+const AuthContext = createContext();
 
-export const AuthContext = ({ children }) => {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  // On mount, check for token and verify it
   useEffect(() => {
-    const verifyUser = async () => {
-      // if (!token) {
-      //   // No token found, user is not logged in
-      //   setUser(null);
-      //   setLoading(false);
-      //   return;
-      // }
-
-      try {
-        const token = localStorage.getItem("token");
-        if (token) {
-          const response = await axios.get(
-            "http://localhost:5000/api/auth/verify",
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          );
-
-          if (response.data.success) {
-            setUser(response.data.user);
-          }
-        } else {
-          // localStorage.removeItem("token");
+    const token = localStorage.getItem("token");
+    if (token) {
+      axios
+        .get(`${API_URL}/api/auth/verify`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .then((res) => {
+          setUser(res.data.user);
+        })
+        .catch(() => {
+          localStorage.removeItem("token");
           setUser(null);
-          setLoading(false);
-        }
-      } catch (error) {
-        // Handle API errors
-        if (error.response) {
-          console.log("API error:", error.response.status, error.response.data);
-        } else {
-          console.log("Error:", error.message);
-        }
-        // Clear invalid token
-        localStorage.removeItem("token");
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    verifyUser();
+        })
+        .finally(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, []);
 
   const login = (userData, token) => {
-    setUser(userData);
     localStorage.setItem("token", token);
+    setUser(userData);
   };
 
   const logout = () => {
-    setUser(null);
     localStorage.removeItem("token");
+    setUser(null);
   };
 
   return (
-    <userContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, login, logout, loading }}>
       {children}
-    </userContext.Provider>
+    </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => useContext(userContext);
+export const useAuth = () => useContext(AuthContext);
+
+export { AuthContext };

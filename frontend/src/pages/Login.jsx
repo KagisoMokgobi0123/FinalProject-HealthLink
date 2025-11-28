@@ -2,110 +2,99 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authContext";
-const API = import.meta.env.VITE_API_URL;
-function Login() {
+import { toast } from "react-toastify";
+
+const Login = () => {
+  const navigate = useNavigate();
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(null);
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
+
     try {
-      const response = await axios.post(`${API}/api/auth/login`, {
+      const response = await axios.post(`${API_URL}/api/auth/login`, {
         email,
         password,
       });
-      console.log(response);
-      if (response.data.success) {
-        login(response.data.user);
-        localStorage.setItem("token", response.data.token);
-        if (response.data.user.role === "admin") {
-          navigate("/admin-dashboard");
-        } else {
-          navigate("/employee-dashboard");
-        }
+
+      const { token, user } = response.data;
+
+      login(user, token);
+      toast.success("Login successful!");
+
+      if (user.role === "admin") {
+        navigate("/admin-dashboard");
+      } else {
+        navigate("/employee-dashboard");
       }
     } catch (error) {
-      console.log(error);
-      if (error.response && !error.response.data.success) {
-        setError(error.response.data.error);
-      } else {
-        setError("Server error");
-      }
+      console.error("Login failed:", error);
+      toast.error(
+        error.response?.data?.error || "Login failed. Check your credentials."
+      );
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
-    <div className="flex flex-col items-center h-screen justify-center bg-gradient-to-b from-teal-600 from-50% to-gray-100 to-50% space-y-6">
-      {" "}
-      {/* Main Title */}{" "}
-      <h1 className="text-4xl font-bold mb-8 text-white text-center">
-        {" "}
-        Ward Management System{" "}
-      </h1>{" "}
-      {/* Login Form */}{" "}
-      <div className="bg-white p-8 w-full max-w-md shadow-lg rounded-md">
-        {" "}
+    <div className="flex items-center justify-center h-screen bg-gray-100">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md"
+      >
         <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">
-          {" "}
-          Login{" "}
-        </h2>{" "}
-        {error && <p className="text-red-500">{error}</p>}{" "}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {" "}
-          <div>
-            {" "}
-            <label htmlFor="email" className="block text-gray-700 mb-2">
-              {" "}
-              Email{" "}
-            </label>{" "}
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              className="w-full px-4 py-2 border border-blue-200 bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />{" "}
-          </div>{" "}
-          <div>
-            {" "}
-            <label htmlFor="password" className="block text-gray-700 mb-2">
-              {" "}
-              Password{" "}
-            </label>{" "}
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter your password"
-              className="w-full px-4 py-2 border border-blue-200 bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              required
-            />{" "}
-            {/* Forgot Password Link */}{" "}
-            <div className="text-right mt-2">
-              {" "}
-              <a
-                href="/forgot-password"
-                className="text-blue-700 hover:underline text-sm"
-              >
-                {" "}
-                Forgot password?{" "}
-              </a>{" "}
-            </div>{" "}
-          </div>{" "}
+          Login
+        </h2>
+
+        <div className="mb-4">
+          <label className="block mb-1 text-gray-700">Email</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+
+        <div className="mb-6">
+          <label className="block mb-1 text-gray-700">Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full p-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+          />
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600 transition-colors duration-200"
+          disabled={loading}
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+
+        <div className="mt-4 text-center">
+          <span className="text-gray-600 mr-2">Don't have an account?</span>
           <button
-            type="submit"
-            className="w-full bg-teal-600 text-white py-2 hover:bg-teal-500 transition duration-200"
+            type="button"
+            className="text-blue-500 font-semibold hover:underline"
+            onClick={() => navigate("/signup")}
           >
-            {" "}
-            Login{" "}
-          </button>{" "}
-        </form>{" "}
-      </div>{" "}
+            Sign Up
+          </button>
+        </div>
+      </form>
     </div>
   );
-}
+};
+
 export default Login;

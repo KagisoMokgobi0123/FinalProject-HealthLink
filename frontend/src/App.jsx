@@ -1,15 +1,17 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
+import Signup from "./pages/Signup";
 import AdminDashboard from "./pages/AdminDashboard";
 import EmployeeDashboard from "./pages/EmployeeDashboard";
+import Unauthorized from "./pages/Unauthorized";
 import PrivateRoutes from "./utils/PrivateRoutes";
 import RoleBaseRoutes from "./utils/RoleBaseRoutes";
 
 // Admin components
 import AdminSummary from "./components/dashboard/AdminSummary";
-import EmployeeList from "./components/employees/EmployeeList";
-import AddEmployee from "./components/employees/AddEmployee";
-import EditEmployee from "./components/employees/EditEmployee";
+import UserList from "./components/employees/UserList";
+import AddUser from "./components/employees/AddUser";
+import EditUser from "./components/employees/EditUser";
 import WardList from "./components/ward/WardList";
 import AddBed from "./components/ward/AddBed";
 import EditBed from "./components/ward/EditBed";
@@ -31,7 +33,10 @@ import "react-toastify/dist/ReactToastify.css";
 import { useAuth } from "./context/authContext";
 
 function App() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
+
+  // Show loading state while verifying token
+  if (loading) return <div>Loading...</div>;
 
   // Default redirect based on role
   const getDefaultRoute = () => {
@@ -41,7 +46,6 @@ function App() {
 
   return (
     <BrowserRouter>
-      {/* Toast Notifications */}
       <ToastContainer
         position="bottom-right"
         autoClose={2000}
@@ -55,8 +59,12 @@ function App() {
         {/* Default redirect */}
         <Route path="/" element={<Navigate to={getDefaultRoute()} replace />} />
 
-        {/* Public route */}
+        {/* Public routes */}
         <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+
+        {/* Unauthorized page */}
+        <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Admin protected routes */}
         <Route
@@ -70,9 +78,9 @@ function App() {
           }
         >
           <Route index element={<AdminSummary />} />
-          <Route path="employees" element={<EmployeeList />} />
-          <Route path="add-employee" element={<AddEmployee />} />
-          <Route path="edit-employee/:id" element={<EditEmployee />} />
+          <Route path="user" element={<UserList />} />
+          <Route path="add-user" element={<AddUser />} />
+          <Route path="edit-user/:id" element={<EditUser />} />
           <Route path="ward" element={<WardList />} />
           <Route path="add-bed" element={<AddBed />} />
           <Route path="edit-bed/:id" element={<EditBed />} />

@@ -1,196 +1,121 @@
-import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 
-const EditMedication = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+export default function EditMedication({ id, isOpen, onClose, onUpdate }) {
+  const [loading, setLoading] = useState(true);
+  const [drug, setDrug] = useState("");
+  const [description, setDescription] = useState("");
+  const [status, setStatus] = useState("Active");
 
-  const [medicationData, setMedicationData] = useState({
-    drug: "",
-    description: "",
-    status: "Active",
-  });
-  const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
-  // Fetch medication data on mount
   useEffect(() => {
-    const fetchMedication = async () => {
-      try {
-        const response = await axios.get(
-          `http://localhost:5000/api/medication/${id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
-          }
-        );
-
-        if (response.data.success) {
-          const { drug, description, status } = response.data.medication;
-          setMedicationData({
-            drug: drug || "",
-            description: description || "",
-            status: status || "Active",
+    if (isOpen) {
+      const fetchMedication = async () => {
+        try {
+          setLoading(true);
+          const token = localStorage.getItem("token");
+          const res = await axios.get(`${API_URL}/api/medication/${id}`, {
+            headers: { Authorization: `Bearer ${token}` },
           });
+          const med = res.data.medication;
+          setDrug(med.drug);
+          setDescription(med.description);
+          setStatus(med.status || "Active");
+        } catch (err) {
+          console.error(err);
+          toast.error("Failed to fetch medication", {
+            position: "bottom-right",
+          });
+        } finally {
+          setLoading(false);
         }
-      } catch (err) {
-        console.error("Error fetching medication:", err.response?.data || err);
-        toast.error(
-          err.response?.data?.error || "Failed to fetch medication data"
-        );
-      } finally {
-        setFetching(false);
-      }
-    };
-
-    fetchMedication();
-  }, [id]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setMedicationData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({
-      ...prev,
-      [name]: value ? "" : `${name} is required`,
-    }));
-  };
+      };
+      fetchMedication();
+    }
+  }, [id, isOpen]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validation
-    const newErrors = {};
-    Object.keys(medicationData).forEach((key) => {
-      if (!medicationData[key]) newErrors[key] = `${key} is required`;
-    });
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
     try {
-      setLoading(true);
-      const response = await axios.put(
-        `http://localhost:5000/api/medication/${id}`,
-        medicationData,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `${API_URL}/api/medication/${id}`,
+        { drug, description, status },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-
-      if (response.data.success) {
-        toast.success("Medication updated successfully!");
-        setTimeout(() => navigate("/admin-dashboard/medication"), 1000);
-      }
+      toast.success("Medication updated successfully", {
+        position: "bottom-right",
+      });
+      onUpdate();
+      onClose();
     } catch (err) {
-      console.error("Update medication error:", err.response?.data || err);
-      toast.error(
-        err.response?.data?.error || "Server error while updating medication"
-      );
-    } finally {
-      setLoading(false);
+      console.error(err);
+      toast.error(err.response?.data?.error || "Failed to update medication", {
+        position: "bottom-right",
+      });
     }
   };
 
-  if (fetching) {
-    return <div className="text-center mt-10">Loading medication data...</div>;
-  }
+  if (!isOpen) return null;
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      {/* Back button */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          to="/admin-dashboard/medication"
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition"
-        >
-          ← Back
-        </Link>
-        <span className="w-2 h-2 bg-gray-500 rounded-full"></span>
+    <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/50">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+        <h2 className="text-2xl font-bold mb-4 text-center">Edit Medication</h2>
+        {loading ? (
+          <div className="text-center">Loading...</div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Drug Name */}
+            <input
+              type="text"
+              value={drug}
+              onChange={(e) => setDrug(e.target.value)}
+              placeholder="Drug Name"
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              required
+            />
+
+            {/* Description */}
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Description"
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              required
+            />
+
+            {/* Status */}
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
+              required
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+
+            <div className="flex justify-between gap-2">
+              <button
+                type="submit"
+                className="w-full bg-yellow-500 text-white p-3 rounded hover:bg-yellow-600 transition-colors"
+              >
+                Update Medication
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="w-full bg-gray-500 text-white p-3 rounded hover:bg-gray-600 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
       </div>
-
-      <h3 className="text-2xl font-semibold text-gray-800 mb-6 text-center sm:text-left">
-        Edit Medication
-      </h3>
-
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 bg-white p-6 sm:p-8 rounded-xl shadow"
-      >
-        {/* Drug Name */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">Drug</label>
-          <input
-            type="text"
-            name="drug"
-            value={medicationData.drug}
-            onChange={handleChange}
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
-              errors.drug ? "border-red-500" : "border-gray-300"
-            }`}
-          />
-          {errors.drug && (
-            <p className="text-red-500 text-sm mt-1">{errors.drug}</p>
-          )}
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={medicationData.description}
-            onChange={handleChange}
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
-              errors.description ? "border-red-500" : "border-gray-300"
-            }`}
-            rows={3}
-          ></textarea>
-          {errors.description && (
-            <p className="text-red-500 text-sm mt-1">{errors.description}</p>
-          )}
-        </div>
-
-        {/* Status */}
-        <div>
-          <label className="block mb-2 font-medium text-gray-700">Status</label>
-          <select
-            name="status"
-            value={medicationData.status}
-            onChange={handleChange}
-            className={`w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition ${
-              errors.status ? "border-red-500" : "border-gray-300"
-            }`}
-          >
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-          </select>
-          {errors.status && (
-            <p className="text-red-500 text-sm mt-1">{errors.status}</p>
-          )}
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full bg-blue-600 text-white py-2 rounded-lg font-medium transition ${
-            loading ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700"
-          }`}
-        >
-          {loading ? "Updating..." : "Update Medication"}
-        </button>
-      </form>
     </div>
   );
-};
-
-export default EditMedication;
+}

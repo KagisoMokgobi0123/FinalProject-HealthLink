@@ -14,63 +14,63 @@ const menuItems = [
   {
     name: "Dashboard",
     icon: FaTachometerAlt,
-    path: "",
+    path: "/admin-dashboard",
     activeBg: "bg-teal-800",
     hoverBg: "hover:bg-teal-600",
   },
   {
     name: "Employee",
     icon: FaUsers,
-    path: "employees",
+    path: "/admin-dashboard/user",
     activeBg: "bg-gray-800",
     hoverBg: "hover:bg-gray-800",
   },
   {
     name: "Ward",
     icon: FaHospital,
-    path: "ward",
+    path: "/admin-dashboard/ward",
     activeBg: "bg-gray-800",
     hoverBg: "hover:bg-gray-800",
   },
   {
     name: "Add Bed",
     icon: FaHospital,
-    path: "add-bed",
+    path: "/admin-dashboard/add-bed",
     activeBg: "bg-gray-800",
     hoverBg: "hover:bg-gray-800",
   },
   {
     name: "Medication",
     icon: FaPills,
-    path: "medication",
+    path: "/admin-dashboard/medication",
     activeBg: "bg-gray-800",
     hoverBg: "hover:bg-gray-800",
   },
   {
     name: "Allergies",
     icon: FaBiohazard,
-    path: "allergies",
+    path: "/admin-dashboard/allergies",
     activeBg: "bg-gray-800",
     hoverBg: "hover:bg-gray-800",
   },
   {
     name: "Chronics",
     icon: FaHeartbeat,
-    path: "chronic",
+    path: "/admin-dashboard/chronic",
     activeBg: "bg-gray-800",
     hoverBg: "hover:bg-gray-800",
   },
   {
     name: "Role",
     icon: FaUserShield,
-    path: "role",
+    path: "/admin-dashboard/role",
     activeBg: "bg-gray-800",
     hoverBg: "hover:bg-gray-800",
   },
   {
     name: "Settings",
     icon: FaCogs,
-    path: "settings",
+    path: "/admin-dashboard/settings",
     activeBg: "bg-gray-800",
     hoverBg: "hover:bg-gray-800",
   },
@@ -100,7 +100,7 @@ const AdminSidebar = ({ isOpen, setIsOpen }) => {
                 isActive ? `${activeBg} text-white` : "text-gray-200"
               }`
             }
-            onClick={() => setIsOpen(false)} // close sidebar on mobile
+            onClick={() => setIsOpen(false)}
           >
             <Icon className="text-lg" />
             <span>{name}</span>

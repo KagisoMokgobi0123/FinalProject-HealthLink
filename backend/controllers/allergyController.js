@@ -7,124 +7,89 @@ export const getAllergies = async (req, res) => {
     return res.status(200).json({ success: true, allergies });
   } catch (error) {
     console.error("Get Allergies Error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Fetching allergies server error",
-    });
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
 // GET ALLERGY BY ID
 export const getAllergyById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const allergy = await Allergy.findById(id);
-
-    if (!allergy) {
+    const allergy = await Allergy.findById(req.params.id);
+    if (!allergy)
       return res
         .status(404)
         .json({ success: false, error: "Allergy not found" });
-    }
 
     return res.status(200).json({ success: true, allergy });
   } catch (error) {
     console.error("Get Allergy Error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Fetching allergy failed",
-    });
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
-// ADD NEW ALLERGY
+// ADD ALLERGY
 export const addAllergy = async (req, res) => {
   try {
-    const { allergyName, description, status } = req.body;
+    const { allergyName, description } = req.body;
+    if (!allergyName || !description)
+      return res
+        .status(400)
+        .json({ success: false, error: "Name and description required" });
 
-    // Validate required fields: allergyName and description
-    if (!allergyName || !description) {
-      return res.status(400).json({
-        success: false,
-        error: "Allergy name and description are required",
-      });
-    }
-
-    // Default status to "active" if not provided
-    const newAllergy = new Allergy({
-      allergyName,
-      description,
-      status: status || "active", // Default to "active" if no status provided
-    });
-
+    const newAllergy = new Allergy({ allergyName, description });
     await newAllergy.save();
-    return res.status(201).json({
-      success: true,
-      message: "Allergy added successfully",
-      allergy: newAllergy,
-    });
+
+    return res
+      .status(201)
+      .json({ success: true, message: "Allergy added", allergy: newAllergy });
   } catch (error) {
     console.error("Add Allergy Error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Adding allergy server error",
-      details: error.message,
-    });
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
 // UPDATE ALLERGY
 export const updateAllergy = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { allergyName, description, status } = req.body;
-
-    const existingAllergy = await Allergy.findById(id);
-    if (!existingAllergy)
-      return res
-        .status(404)
-        .json({ success: false, error: "Allergy not found" });
-
-    // Update fields if they exist in the request body
-    if (allergyName) existingAllergy.allergyName = allergyName;
-    if (description) existingAllergy.description = description;
-    if (status) existingAllergy.status = status;
-
-    await existingAllergy.save();
-    return res.status(200).json({
-      success: true,
-      message: "Allergy updated successfully",
-      allergy: existingAllergy,
-    });
-  } catch (error) {
-    console.error("Update Allergy Error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Updating allergy server error",
-    });
-  }
-};
-
-// DELETE ALLERGY
-export const deleteAllergy = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const allergy = await Allergy.findById(id);
+    const allergy = await Allergy.findById(req.params.id);
     if (!allergy)
       return res
         .status(404)
         .json({ success: false, error: "Allergy not found" });
 
-    await Allergy.findByIdAndDelete(id);
-    return res.status(200).json({
-      success: true,
-      message: "Allergy deleted successfully",
-    });
+    const { allergyName, description, status } = req.body;
+    if (allergyName) allergy.allergyName = allergyName;
+    if (description) allergy.description = description;
+    if (status) allergy.status = status;
+
+    await allergy.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Allergy updated", allergy });
+  } catch (error) {
+    console.error("Update Allergy Error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
+  }
+};
+
+// SOFT DELETE ALLERGY
+export const deleteAllergy = async (req, res) => {
+  try {
+    const allergy = await Allergy.findById(req.params.id);
+    if (!allergy)
+      return res
+        .status(404)
+        .json({ success: false, error: "Allergy not found" });
+
+    allergy.status = "inactive";
+    await allergy.save();
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Allergy deactivated successfully" });
   } catch (error) {
     console.error("Delete Allergy Error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Deleting allergy server error",
-    });
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };

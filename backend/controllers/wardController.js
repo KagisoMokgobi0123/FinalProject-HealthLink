@@ -1,113 +1,88 @@
 import WardBed from "../models/WardBed.js";
 
-// GET ALL BEDS
-export const getBeds = async (req, res) => {
+// GET ALL WARDS
+export const getWards = async (req, res) => {
   try {
-    const beds = await WardBed.find().sort({ createdAt: -1 });
-    return res.status(200).json({ success: true, beds });
+    const wards = await WardBed.find().sort({ createdAt: -1 });
+    return res.status(200).json({ success: true, wards });
   } catch (error) {
-    console.error("Get Beds Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, error: "Fetching beds server error" });
+    console.error("Get Wards Error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
-// ⭐ NEW — GET BED BY ID
-export const getBedById = async (req, res) => {
+// GET WARD BY ID
+export const getWardById = async (req, res) => {
   try {
-    const { id } = req.params;
-    const bed = await WardBed.findById(id);
+    const ward = await WardBed.findById(req.params.id);
+    if (!ward)
+      return res.status(404).json({ success: false, error: "Ward not found" });
 
-    if (!bed) {
-      return res.status(404).json({ success: false, error: "Bed not found" });
-    }
-
-    return res.status(200).json({ success: true, bed });
+    return res.status(200).json({ success: true, ward });
   } catch (error) {
-    console.error("Get Bed Error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Fetching bed failed",
-    });
+    console.error("Get Ward Error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
-// ADD NEW BED
-export const addBed = async (req, res) => {
+// ADD WARD
+export const addWard = async (req, res) => {
   try {
-    console.log("Request Body:", req.body); // Log incoming data
-
-    const { bed_type, ward, bedStatus } = req.body;
-
-    if (!bed_type || !ward) {
+    const { ward, bed_type } = req.body;
+    if (!ward || !bed_type)
       return res
         .status(400)
-        .json({ success: false, error: "Bed Type and Ward are required" });
-    }
+        .json({ success: false, error: "Ward and bed_type required" });
 
-    const newBed = new WardBed({
-      bed_type,
-      ward,
-      bedStatus: bedStatus || "available",
-    });
+    const newWard = new WardBed({ ward, bed_type });
+    await newWard.save();
 
-    await newBed.save();
     return res
       .status(201)
-      .json({ success: true, message: "Bed added successfully", bed: newBed });
+      .json({ success: true, message: "Ward added", ward: newWard });
   } catch (error) {
-    console.error("Add Bed Error:", error); // Show full Mongoose error
-    return res.status(500).json({
-      success: false,
-      error: "Adding bed server error",
-      details: error.message,
-    });
+    console.error("Add Ward Error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
-// UPDATE BED
-export const updateBed = async (req, res) => {
+// UPDATE WARD
+export const updateWard = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { bed_type, ward, bedStatus } = req.body;
+    const ward = await WardBed.findById(req.params.id);
+    if (!ward)
+      return res.status(404).json({ success: false, error: "Ward not found" });
 
-    const bed = await WardBed.findById(id);
-    if (!bed)
-      return res.status(404).json({ success: false, error: "Bed not found" });
+    const { ward: wardName, bed_type, bedStatus } = req.body;
+    if (wardName) ward.ward = wardName;
+    if (bed_type) ward.bed_type = bed_type;
+    if (bedStatus) ward.bedStatus = bedStatus;
 
-    if (bed_type) bed.bed_type = bed_type;
-    if (ward) bed.ward = ward;
-    if (bedStatus) bed.bedStatus = bedStatus;
-
-    await bed.save();
+    await ward.save();
     return res
       .status(200)
-      .json({ success: true, message: "Bed updated successfully", bed });
+      .json({ success: true, message: "Ward updated", ward });
   } catch (error) {
-    console.error("Update Bed Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, error: "Updating bed server error" });
+    console.error("Update Ward Error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };
 
-// DELETE BED
-export const deleteBed = async (req, res) => {
+// SOFT DELETE WARD
+export const deleteWard = async (req, res) => {
   try {
-    const { id } = req.params;
-    const bed = await WardBed.findById(id);
-    if (!bed)
-      return res.status(404).json({ success: false, error: "Bed not found" });
+    const ward = await WardBed.findById(req.params.id);
+    if (!ward)
+      return res.status(404).json({ success: false, error: "Ward not found" });
 
-    await WardBed.findByIdAndDelete(id);
+    ward.bedStatus = "inactive";
+    await ward.save();
+
     return res
       .status(200)
-      .json({ success: true, message: "Bed deleted successfully" });
+      .json({ success: true, message: "Ward deactivated successfully" });
   } catch (error) {
-    console.error("Delete Bed Error:", error);
-    return res
-      .status(500)
-      .json({ success: false, error: "Deleting bed server error" });
+    console.error("Delete Ward Error:", error);
+    return res.status(500).json({ success: false, error: "Server error" });
   }
 };

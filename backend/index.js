@@ -1,60 +1,87 @@
 import express from "express";
 import cors from "cors";
-import authRouter from "./routes/auth.js";
+import dotenv from "dotenv";
+import path from "path";
 import connectDB from "./db/db.js";
+
+import authRouter from "./routes/auth.js";
 import wardRouter from "./routes/ward.js";
 import roleRouter from "./routes/role.js";
-import employeeRouter from "./routes/employee.js";
+import userRouter from "./routes/user.js";
 import medicationRouter from "./routes/medication.js";
 import chronicRouter from "./routes/chronics.js";
 import allergyRouter from "./routes/allergy.js";
 
+dotenv.config();
+
 const startServer = async () => {
-  await connectDB();
+  try {
+    await connectDB();
+    const app = express();
 
-  const app = express();
+    // Allowed frontend URLs
+    const allowedOrigins = [
+      process.env.ALLOW_ORIGIN_LOCAL,
+      process.env.ALLOW_ORIGIN_PROD,
+    ].filter(Boolean);
 
-  // Allowed origins for CORS
-  const allowedOrigins = [
-    process.env.ALLOW_ORIGIN_LOCAL,
-    process.env.ALLOW_ORIGIN_PROD,
-  ];
+    // CORS middleware
+    app.use(
+      cors({
+        origin: (origin, callback) => {
+          if (!origin) return callback(null, true); // Postman, curl
+          if (allowedOrigins.includes(origin)) return callback(null, true);
+          console.warn("❌ Blocked by CORS:", origin);
+          return callback(new Error("Not allowed by CORS"));
+        },
+        credentials: true,
+        methods: ["GET", "POST", "PUT", "DELETE"],
+      })
+    );
 
-  // CORS middleware
-  app.use(
-    cors({
-      origin: (origin, callback) => {
-        if (!origin) return callback(null, true); // allow requests like Postman
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-        return callback(new Error("Not allowed by CORS"));
-      },
-      methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-      credentials: true, // allow cookies/auth headers if needed
-    })
-  );
+    // Body parser
+    app.use(express.json());
 
-  // Parse JSON requests
-  app.use(express.json());
+    // API routes (must come before React catch-all)
+    app.use("/api/auth", authRouter);
+    app.use("/api/ward", wardRouter);
+    app.use("/api/role", roleRouter);
+    app.use("/api/user", userRouter);
+    app.use("/api/medication", medicationRouter);
+    app.use("/api/chronic", chronicRouter);
+    app.use("/api/allergy", allergyRouter);
 
-  // Routes
-  app.use("/api/auth", authRouter);
-  app.use("/api/ward", wardRouter);
-  app.use("/api/role", roleRouter);
-  app.use("/api/employee", employeeRouter);
-  app.use("/api/medication", medicationRouter);
-  app.use("/api/chronic", chronicRouter);
-  app.use("/api/allergy", allergyRouter);
+    // Root health check
+    app.get("/api", (req, res) => {
+      res.json({ status: "OK", message: "HealthLink API is running..." });
+    });
 
-  // // Catch-all route for undefined API endpoints
-  // app.all("/api/:path(*)", (req, res) => {
-  //   res.status(404).json({ error: "API endpoint not found" });
-  // });
+    // Serve React in production
+    if (process.env.NODE_ENV === "production") {
+      const __dirname = path.resolve();
+      app.use(express.static(path.join(__dirname, "client/dist")));
 
-  // Start server
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+      // React catch-all (for client-side routing)
+      app.get("*", (req, res) => {
+        res.sendFile(path.join(__dirname, "client/dist", "index.html"));
+      });
+    }
+
+    // Global error handler
+    app.use((err, req, res, next) => {
+      console.error("🔥 Global Error:", err.stack || err.message);
+      res.status(500).json({
+        success: false,
+        error: err.message || "Server Error",
+      });
+    });
+
+    const PORT = process.env.PORT || 5000;
+    app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  } catch (error) {
+    console.error("❌ Startup Error:", error.message);
+    process.exit(1);
+  }
 };
 
 startServer();

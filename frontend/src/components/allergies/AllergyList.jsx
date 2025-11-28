@@ -1,165 +1,161 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import axios from "axios";
-import DataTable from "react-data-table-component";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import EditAllergy from "./EditAllergy";
 
-const AllergyList = () => {
+export default function AllergyList() {
   const [allergies, setAllergies] = useState([]);
+  const [filteredAllergies, setFilteredAllergies] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editingAllergyId, setEditingAllergyId] = useState(null);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
 
-  // Fetch all allergies
-  useEffect(() => {
-    fetchAllergies();
-  }, []);
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+  const navigate = useNavigate();
 
   const fetchAllergies = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("User not authenticated");
-
-      const response = await axios.get("http://localhost:5000/api/allergy", {
+      const res = await axios.get(`${API_URL}/api/allergy`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (response.data.success) {
-        setAllergies(response.data.allergies || []);
-      } else {
-        toast.error(response.data.error || "Failed to fetch allergies");
-      }
+      setAllergies(res.data.allergies || []);
+      setFilteredAllergies(res.data.allergies || []);
     } catch (err) {
-      console.error("Error fetching allergies:", err);
-      toast.error("Failed to fetch allergy data");
+      console.error(err);
+      toast.error("Failed to fetch allergies", { position: "bottom-right" });
+      setAllergies([]);
+      setFilteredAllergies([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // Delete an allergy
+  useEffect(() => {
+    fetchAllergies();
+  }, []);
+
+  useEffect(() => {
+    const query = search.toLowerCase();
+    const filtered = allergies.filter(
+      (a) =>
+        a.allergyName.toLowerCase().includes(query) ||
+        a.description.toLowerCase().includes(query)
+    );
+    setFilteredAllergies(filtered);
+  }, [search, allergies]);
+
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this allergy?"))
+    if (!window.confirm("Are you sure you want to deactivate this allergy?"))
       return;
 
     try {
       const token = localStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/allergy/${id}`, {
+      await axios.delete(`${API_URL}/api/allergy/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setAllergies(allergies.filter((allergy) => allergy._id !== id));
-      toast.success("Allergy deleted successfully");
+      toast.success("Allergy deactivated successfully", {
+        position: "bottom-right",
+      });
+      fetchAllergies();
     } catch (err) {
-      console.error("Delete error:", err);
-      toast.error("Failed to delete allergy");
+      console.error(err);
+      toast.error("Failed to deactivate allergy", { position: "bottom-right" });
     }
   };
 
-  // Define DataTable columns
-  const columns = [
-    {
-      name: "Allergy Name",
-      selector: (row) => row.allergyName,
-      sortable: true,
-    },
-    { name: "Description", selector: (row) => row.description, sortable: true },
-    {
-      name: "Status",
-      selector: (row) => (
-        <span
-          className={`inline-block py-1 px-2 rounded-full text-xs ${
-            row.status === "active"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {row.status}
-        </span>
-      ),
-      sortable: true,
-    },
-    {
-      name: "Action",
-      cell: (row) => (
-        <div className="flex gap-2">
-          <Link
-            to={`/admin-dashboard/edit-allergy/${row._id}`}
-            className="px-2 py-1 bg-yellow-500 text-white text-sm rounded hover:bg-yellow-600 transition"
-          >
-            Edit
-          </Link>
-          <button
-            onClick={() => handleDelete(row._id)}
-            className="px-2 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition"
-          >
-            Delete
-          </button>
-        </div>
-      ),
-      ignoreRowClick: true,
-    },
-  ];
-
-  // Filter allergies by name, description, or status
-  const filteredAllergies = allergies.filter((allergy) => {
-    const searchTerm = search.toLowerCase();
-    return (
-      allergy.allergyName?.toLowerCase().includes(searchTerm) ||
-      allergy.description?.toLowerCase().includes(searchTerm) ||
-      allergy.status?.toLowerCase().includes(searchTerm)
-    );
-  });
-
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Navigation */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link
-          to="/admin-dashboard"
-          className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition"
-        >
-          ← Back
-        </Link>
-      </div>
-
-      {/* Title + Search + Add */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4">
-        <h3 className="text-2xl font-semibold text-gray-800">
-          Manage Allergies
-        </h3>
-        <div className="flex gap-2 flex-col sm:flex-row items-center">
-          <input
-            type="text"
-            placeholder="Search by name, description, or status"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <Link
-            to="/admin-dashboard/add-allergy"
-            className="px-5 py-2 bg-blue-600 text-white rounded-lg font-medium shadow hover:bg-blue-700 transition"
+    <div className="p-4 min-h-screen bg-gray-50">
+      <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
+        <h1 className="text-2xl font-bold text-gray-800">Allergy Management</h1>
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => navigate("/admin-dashboard")}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          >
+            Back to Dashboard
+          </button>
+          <button
+            onClick={() => navigate("/admin-dashboard/add-allergy")}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded"
           >
             Add New Allergy
-          </Link>
+          </button>
         </div>
       </div>
 
-      {/* DataTable */}
-      <div className="overflow-x-auto bg-white shadow-lg rounded-lg">
-        <DataTable
-          columns={columns}
-          data={filteredAllergies}
-          pagination
-          highlightOnHover
-          striped
-          responsive
-          progressPending={loading}
-          noHeader
-          defaultSortField="allergyName"
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Search by name or description..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-400"
         />
       </div>
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white shadow-md rounded-lg overflow-hidden">
+          <thead className="bg-gray-200">
+            <tr>
+              <th className="py-2 px-4 text-left">Allergy Name</th>
+              <th className="py-2 px-4 text-left">Description</th>
+              <th className="py-2 px-4 text-left">Status</th>
+              <th className="py-2 px-4 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan="4" className="text-center py-4 text-gray-500">
+                  Loading...
+                </td>
+              </tr>
+            ) : filteredAllergies.length > 0 ? (
+              filteredAllergies.map((allergy) => (
+                <tr key={allergy._id} className="border-b hover:bg-gray-50">
+                  <td className="py-2 px-4">{allergy.allergyName}</td>
+                  <td className="py-2 px-4">{allergy.description}</td>
+                  <td className="py-2 px-4 capitalize">
+                    {allergy.status || "Active"}
+                  </td>
+                  <td className="py-2 px-4 flex justify-center gap-2 flex-wrap">
+                    <button
+                      onClick={() => setEditingAllergyId(allergy._id)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleDelete(allergy._id)}
+                      className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded"
+                    >
+                      Deactivate
+                    </button>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td colSpan="4" className="text-center py-4 text-gray-500">
+                  No allergies found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {editingAllergyId && (
+        <EditAllergy
+          id={editingAllergyId}
+          isOpen={Boolean(editingAllergyId)}
+          onClose={() => setEditingAllergyId(null)}
+          onUpdate={fetchAllergies}
+        />
+      )}
     </div>
   );
-};
-
-export default AllergyList;
+}
