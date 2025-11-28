@@ -1,135 +1,72 @@
-# RUN a project
-# ---------------------------
-1. Clone repo
+# Run the project locally
 
-  1. Frontend: React (or any other framework)
-1.1. Setting up the React App
+1️⃣ Seed the database
 
-Navigate to your frontend directory (if you're in a monorepo, this will typically be inside a client or frontend folder):
+Run the roles seed (empRole.js) first. This creates initial roles like admin, doctor, nurse, etc.
 
-cd frontend
+Run the user seed (userSeed.js) next. This creates an admin user linked to the admin role.
 
+Make sure your backend .env file is set up before running the seeds.
 
-Install dependencies:
-If you haven’t installed the dependencies yet, use npm (or yarn) to install them:
+2️⃣ Backend setup
 
-npm install
-
-
-This will install the necessary dependencies in the package.json file.
-
-Set up Proxy (Optional but recommended for local development):
-In React, you can set up a proxy to forward API requests to the backend while running both servers locally. In your frontend/package.json file, add a proxy field like this:
-
-"proxy": "http://localhost:5000"
-
-
-This assumes that your backend is running on port 5000 (you can adjust this to whatever port your backend uses). This allows you to make API requests to the backend without dealing with CORS issues during development.
-
-Run the React App:
-Now, you can start the frontend server. Run this command inside the frontend directory:
-
-npm start
-
-
-This will start the React development server, and you should be able to access your app in the browser at http://localhost:3000.
-
-The React development server will automatically reload the page when you make changes to your code.
-2. Backend: Express (or any other Node.js backend framework)
-2.1. Setting up the Backend
-
-Navigate to your backend directory (if separate from frontend):
+Go to your backend folder:
 
 cd backend
 
-
 Install dependencies:
-If you haven’t installed the backend dependencies yet, run:
 
 npm install
 
+Create a .env file in the backend folder with the following variables:
 
-This will install all the dependencies listed in the backend/package.json file (e.g., Express, Mongoose, JWT, etc.).
+PORT=5000
+MONGODB_URI=<your MongoDB connection string> # e.g., mongodb://127.0.0.1:27017/healthlink
+JWT_SECRET=<your secret key> # e.g., supersecretkey
+ALLOW_ORIGIN_LOCAL=http://localhost:5173
+ALLOW_ORIGIN_PROD=http://localhost:5173 # for local testing, use frontend dev URL
+SMTP_HOST=<your SMTP host>
+SMTP_PORT=<your SMTP port>
+SMTP_USER=<your email username>
+SMTP_PASS=<your email password>
+SMTP_SECURE=<true or false>
 
-Run the Backend Server:
-Typically, your backend will be set to listen on a different port (e.g., 5000 for the backend). Run the backend server using:
+Run the seed scripts in order:
 
-npm start
+node seeds/empRole.js
+node seeds/userSeed.js
 
-
-Make sure your backend/package.json includes a start script that runs your server. For example:
-
-"scripts": {
-  "start": "node server.js"
-}
-
-
-If you're using nodemon (recommended for development), use:
+Start the backend server:
 
 npm run dev
 
+API will be available at http://localhost:5000/api.
 
-This will start your backend server with auto-reload for changes.
+3️⃣ Frontend setup
 
-Access the Backend API:
-After running the backend, you can access your backend API at http://localhost:5000 (or whichever port your backend is configured to run on).
+Go to your frontend folder:
 
-3. Running Both Frontend and Backend Together (Development Environment)
-Option 1: Running Servers in Separate Terminals
+cd frontend
 
-Frontend: In one terminal, navigate to the frontend folder and run:
+Install dependencies:
 
-npm start
+npm install
 
+Create a .env file in the frontend folder with:
 
-Backend: In another terminal, navigate to the backend folder and run:
+VITE_API_URL=http://localhost:5000
 
-npm start
+Start the frontend:
 
+npm run dev
 
-This will start both the frontend and backend servers simultaneously, and they will run independently. Your frontend will be available at http://localhost:3000 (or whatever port React uses), and your backend API will be available at http://localhost:5000.
+Frontend will be available at http://localhost:5173.
 
+4️⃣ Test login
 
-Options to install manually.
-2. Install packages
-first:
-both frontend and backend
->npm init -y
->npm install
-# Packages to install
-backend folder:
+Use the seeded admin user credentials:
 
-> npm i axios
-> npm i bcrypt
-> npm i cors
-> npm i dotenv
-> npm i express
-> npm i jsonwebtoken
-> npm i mongoose
-> npm i multer
-> npm i path
-> npm i react-router-dom
-frontend folder:
->npm install
->npm
-> npm i @tailwindcss/vite
-> npm i autoprefixer
-> npm i axios
-> npm i bcrypt
-> npm i jsonwebtoken
-> npm i postcss
-> npm i react
-> npm i react-data-table-component
-> npm i react-dom
-> npm i react-icons
-> npm i react-router-dom
-> npm i react-toastify
-> npm i styled-components
+Email: admin@example.com
+Password: Admin123!
 
-
-3.Run
-  At gitbash:
-  -backend folder:
-  *node index.js
-  -frontend folder:
-  *npm run dev
+Ensure the login hits the backend successfully.

@@ -18,24 +18,21 @@ const startServer = async () => {
     await connectDB();
     const app = express();
 
-    // Allowed frontend URLs
     const allowedOrigins = [
-      process.env.ALLOW_ORIGIN_LOCAL,
-      process.env.ALLOW_ORIGIN_PROD,
-    ].filter(Boolean);
+      process.env.ALLOW_ORIGIN_LOCAL, // localhost
+      process.env.ALLOW_ORIGIN_PROD, //  production
+    ];
 
-    // CORS
     app.use(
       cors({
         origin: (origin, callback) => {
           if (!origin) return callback(null, true);
 
-          const allowedOrigins = [
-            process.env.ALLOW_ORIGIN_LOCAL,
-            process.env.ALLOW_ORIGIN_PROD,
-          ];
+          // Allow any Vercel deployment of your project
+          const vercelPattern =
+            /^https:\/\/final-project-health-link(-\w+)?\.vercel\.app$/;
 
-          if (allowedOrigins.includes(origin)) {
+          if (allowedOrigins.includes(origin) || vercelPattern.test(origin)) {
             return callback(null, true);
           }
 
